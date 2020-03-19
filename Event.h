@@ -6,22 +6,25 @@
 #define ASSIGNMENT2_EVENT_H
 
 #include "Process.h"
-#include "Helper.h"
 
 #include<iostream>
 #include<string>
 #include <bits/stdc++.h>
 
+using namespace std;
+
 class Event {
 public:
-    Event(int timeStamp, Process* process, bool verbose, int val);
+    Event(int timeStamp, Process *process, int val);
+
     int timeStamp;
-    Process* process;
+    Process *process;
     int val;
     process_state_t oldState;
     process_state_t newState;
-    boolean verbose;
+    process_state_t transition;
 };
 
+ostream& operator<<(ostream &strm, const Event &event);
 
 #endif //ASSIGNMENT2_EVENT_H
