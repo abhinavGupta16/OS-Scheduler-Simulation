@@ -19,6 +19,7 @@ vector<int> randvals;
 Scheduler *scheduler;
 vector<Process*> finishedProcess;
 bool verbose = false;
+int ioTime = 0;
 
 void Simulation();
 
@@ -66,15 +67,15 @@ int main(int argc, char *argv[]){
     readRandomFile(randomFilename, &randvals);
     readInputFile(inputFilename, &eventQueue, ofs, randvals);
     Simulation();
-    printResults(finishedProcess, scheduler);
+    printResults(finishedProcess, scheduler, ioTime);
 }
 
 void Simulation() {
     Event* evt;
     Process* currentRunningProcess = nullptr;
-    int prevIOBurst = 0;
     int conncurrentIOTime = 0;
-    bool ioFlag = false;
+    int overlap = 0;
+    int prevIOTime = 0;
     while( (evt = getEvent(&eventQueue)) ) {
         Process *process = evt->process; // this is the process the event works on
         int currentTime = evt->timeStamp;
@@ -98,7 +99,6 @@ void Simulation() {
                 curState = STATE_READY;
                 transition = TRANS_TO_RUN;
                 callScheduler = true; // conditional on whether something is run
-                ioFlag = false;
                 break;
             case TRANS_TO_RUN:
                 randomBurst = getCpuBurst(currentRunningProcess->cpuBurst, ofs, randvals);
@@ -122,7 +122,6 @@ void Simulation() {
                 newEvent->timeStamp = currentTime + randomBurst;
                 newEvent->oldState = oldState;
                 insertSorted(&eventQueue, newEvent);
-                ioFlag = false;
 // create event for either preemption or blocking
                 break;
             case TRANS_TO_BLOCK:
@@ -137,15 +136,19 @@ void Simulation() {
                     break;
                 }
                 randomBurst = getCpuBurst(currentRunningProcess->ioBurst, ofs, randvals);
-                if(ioFlag){
-                    if(prevIOBurst >= randomBurst){
-                        conncurrentIOTime += randomBurst;
-                    } else {
-                        conncurrentIOTime
+                currentRunningProcess->ioTime += randomBurst;
+
+                if(currentTime + randomBurst > conncurrentIOTime){
+                    ioTime += conncurrentIOTime - prevIOTime - overlap;
+                    if(conncurrentIOTime!=0) {
+                        overlap = conncurrentIOTime - currentTime;
+                        if(overlap < 0) {
+                            overlap = 0;
+                        }
                     }
+                    conncurrentIOTime = randomBurst + currentTime;
+                    prevIOTime = currentTime;
                 }
-                currentRunningProcess->ioTime = randomBurst;
-                prevIOBurst = randomBurst;
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
                          << enumStateToString(evt->curState) << " -> " << "BLOCK  ib=" << randomBurst << " rem="
@@ -160,13 +163,11 @@ void Simulation() {
                 newEvent->timeStamp = currentTime + randomBurst;
                 insertSorted(&eventQueue, newEvent);
                 callScheduler = true;
-                ioFlag = true;
                 currentRunningProcess = nullptr;
                 break;
             case TRANS_TO_PREEMPT:
 // add to runqueue (no event is generated)
                 callScheduler = true;
-                ioFlag = false;
                 break;
             case TRANS_TO_DONE:
                 if(verbose) {
@@ -177,7 +178,6 @@ void Simulation() {
                 doneProcess->turnarTime = currentTime - process->arrivalTime;
                 finishedProcess.push_back(evt->process);
                 callScheduler = true;
-                ioFlag = false;
                 break;
 
         }
@@ -204,9 +204,6 @@ void Simulation() {
 
         }
     }
-    ioTime += conncurrentIOTime;
-    cout<<ioTime<<endl;
-
-
+    ioTime += conncurrentIOTime - prevIOTime - overlap;
 }
 

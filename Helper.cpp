@@ -120,10 +120,10 @@ bool compareInterval(Process* i1, Process* i2)
     return (i1->pid < i2->pid);
 }
 
-void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler){
+void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler, int ioTime){
+    int finishTime = finishedProcess[finishedProcess.size()-1]->finishTime;
     sort(finishedProcess.begin(), finishedProcess.end(), compareInterval);
     double totRunTime = 0;
-    double totIOTime = 0;
     double totTurnarime = 0;
     double totCpuWaiting = 0;
     cout<<scheduler->getName()<<endl;
@@ -132,14 +132,11 @@ void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler){
         printf("%04d: %4d %4d %4d %4d %1d | %5d %5d %5d %5d\n", i, process->arrivalTime, process->reqCpuTime, process->cpuBurst,
                 process->ioBurst, process->priority+1, process->finishTime, process->turnarTime, process->ioTime, process->cpuWaiting);
         totRunTime += process->runTime;
-        totIOTime += process->ioTime;
         totTurnarime += process->turnarTime;
         totCpuWaiting += process->cpuWaiting;
     }
-    cout<<totIOTime<<endl;
-    int finishTime = finishedProcess[finishedProcess.size()-1]->finishTime;
     double cpuUtil = (totRunTime/(double)finishTime)*100;
-    double ioUtil = (totIOTime/(double)finishTime)*100;
+    double ioUtil = (ioTime/(double)finishTime)*100;
     double avgTurnAr = totTurnarime / finishedProcess.size();
     double avgCpuWaiting = totCpuWaiting / finishedProcess.size();
     double throughPut = (finishedProcess.size() /(double) finishTime) * 100;

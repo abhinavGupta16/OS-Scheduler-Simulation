@@ -24,6 +24,6 @@ void runProcess(Process* process, int cpuBurst);
 Event* createEvent(int timestamp, Process* process, process_state_t oldState, process_state_t newState, process_state_t transition);
 string enumStateToString(process_state_t state);
 int getCpuBurst(int burst, int &ofs, vector<int> &randvals);
-void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler);
+void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler, int ioTime);
 
 #endif //ASSIGNMENT2_HELPER_H
