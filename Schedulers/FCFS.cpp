@@ -12,7 +12,6 @@ string FCFS::getName() {
 }
 
 void FCFS::addProcess(Process *process){
-//    runQueue.insert(runQueue.begin(), process);
     runQueue.push_back(process);
 }
 

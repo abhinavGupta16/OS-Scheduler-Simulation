@@ -17,6 +17,14 @@ public:
     virtual Process* getNextProcess(){
         return nullptr;
     };
+    virtual int getQuantum(){
+        return -1;
+    };
+//    virtual int getRemainingCpuBurst(){
+//        return -1;
+//    };
+//    virtual void setRemainingCpuBurst(int remainingCpuBurst){
+//    };
 };
 
 

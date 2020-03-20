@@ -18,6 +18,7 @@ Process::Process(int cpuTime, int cpuBurst, int ioBurst, int pid, int priority, 
     this->ioTime = 0;
     this->runTime = 0;
     this->cpuWaiting = 0;
+    this->remainingBurst = 0;
 }
 
 ostream& operator<<(ostream &strm, const Process &process) {

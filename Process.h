@@ -41,6 +41,7 @@ public:
     int ioTime;
     int runTime;
     int cpuWaiting;
+    int remainingBurst;
 };
 
 ostream& operator<<(ostream &strm, const Process &process);

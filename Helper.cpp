@@ -121,6 +121,9 @@ bool compareInterval(Process* i1, Process* i2)
 }
 
 void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler, int ioTime){
+    if(finishedProcess.empty()){
+        return;
+    }
     int finishTime = finishedProcess[finishedProcess.size()-1]->finishTime;
     sort(finishedProcess.begin(), finishedProcess.end(), compareInterval);
     double totRunTime = 0;

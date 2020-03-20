@@ -9,6 +9,9 @@
 #include "Helper.h"
 #include "Schedulers/Scheduler.h"
 #include "Schedulers/FCFS.h"
+#include "Schedulers/LCFS.h"
+#include "Schedulers/SRTF.h"
+#include "Schedulers/RoundRobin.h"
 #include <unistd.h>
 
 using namespace std;
@@ -24,7 +27,7 @@ int ioTime = 0;
 void Simulation();
 
 void parseArguments(int argc, char *argv[]){
-    int c;
+    int c, quantum;
     bool schedulerInitialized = false;
     while ((c = getopt (argc, argv, "vtes:")) != -1)
         switch (c)
@@ -38,12 +41,16 @@ void parseArguments(int argc, char *argv[]){
                     case 'F':
                         scheduler = new FCFS();
                         break;
-//                    case 'L':
-//                        scheduler = new LCFS();
-//                        break;
-//                    case 'S':
-//                        scheduler = new SJF();
-//                        break;
+                    case 'L':
+                        scheduler = new LCFS();
+                        break;
+                    case 'S':
+                        scheduler = new SRTF();
+                        break;
+                    case 'R':
+                        quantum = atoi(optarg + 1);
+                        scheduler = new RoundRobin(quantum);
+                        break;
                     default:
                         fputs("Error: invalid scheduler "
                               "specified\n\n", stderr);
@@ -81,6 +88,7 @@ void Simulation() {
         int currentTime = evt->timeStamp;
         int timeInPrevState = currentTime - process->stateTs;
         int randomBurst = 0;
+        int cpuBurst = 0;
         Event *newEvent;
         process_state_t oldState = evt->curState;
         process_state_t curState;
@@ -101,25 +109,49 @@ void Simulation() {
                 callScheduler = true; // conditional on whether something is run
                 break;
             case TRANS_TO_RUN:
-                randomBurst = getCpuBurst(currentRunningProcess->cpuBurst, ofs, randvals);
-                if(randomBurst > currentRunningProcess->cpuTime) randomBurst = currentRunningProcess->cpuTime;
-                currentRunningProcess->runTime += randomBurst;
-                currentRunningProcess->cpuWaiting += timeInPrevState;
+
+                if(currentRunningProcess->remainingBurst > 0){
+                    randomBurst = currentRunningProcess->remainingBurst;
+                    currentRunningProcess->remainingBurst = 0;
+                } else {
+                    randomBurst = getCpuBurst(currentRunningProcess->cpuBurst, ofs, randvals);
+                }
+
+                if(randomBurst > currentRunningProcess->cpuTime) {
+                    randomBurst = currentRunningProcess->cpuTime;
+                }
+
+                newEvent = new Event();
+                newEvent->curState = STATE_RUNNING;
+                if(scheduler->getQuantum() != -1){
+                    if(scheduler->getQuantum() < randomBurst){
+                        currentRunningProcess->remainingBurst = randomBurst - scheduler->getQuantum();
+                        cpuBurst = scheduler->getQuantum();
+                        newEvent->transition = TRANS_TO_PREEMPT;
+                    } else {
+                        currentRunningProcess->remainingBurst = 0;
+                        newEvent->transition = TRANS_TO_BLOCK;
+                        cpuBurst = randomBurst;
+                    }
+                } else {
+                    cpuBurst = randomBurst;
+                    newEvent->transition = TRANS_TO_BLOCK;
+                }
+
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
                          << enumStateToString(evt->curState) << " -> " << "RUNNG cb=" << randomBurst << " rem="
                          << currentRunningProcess->cpuTime << " prio=" << currentRunningProcess->priority << endl;
                 }
 
-
+                currentRunningProcess->runTime += cpuBurst;
+                currentRunningProcess->cpuWaiting += timeInPrevState;
                 currentRunningProcess = process;
-                runProcess(currentRunningProcess, randomBurst);
+                runProcess(currentRunningProcess, cpuBurst);
                 currentRunningProcess->stateTs = currentTime;
-                newEvent = new Event();
-                newEvent->curState = STATE_RUNNING;
-                newEvent->transition = TRANS_TO_BLOCK;
+
                 newEvent->process = currentRunningProcess;
-                newEvent->timeStamp = currentTime + randomBurst;
+                newEvent->timeStamp = currentTime + cpuBurst;
                 newEvent->oldState = oldState;
                 insertSorted(&eventQueue, newEvent);
 // create event for either preemption or blocking
@@ -167,6 +199,14 @@ void Simulation() {
                 break;
             case TRANS_TO_PREEMPT:
 // add to runqueue (no event is generated)
+                if(verbose) {
+                    cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
+                         << enumStateToString(evt->curState) << " -> " << "READY  cb=" << currentRunningProcess->remainingBurst << " rem="
+                         << currentRunningProcess->cpuTime << " prio=" << currentRunningProcess->priority << endl;
+                }
+                process->stateTs = currentTime;
+                scheduler->addProcess(process);
+                currentRunningProcess = nullptr;
                 callScheduler = true;
                 break;
             case TRANS_TO_DONE:
