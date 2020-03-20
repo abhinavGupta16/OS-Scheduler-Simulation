@@ -8,11 +8,14 @@
 
 class Scheduler {
 public:
-    virtual void addProcess(){
+    virtual string getName(){
+        return "BASE_CLASS";
+    };
+    virtual void addProcess(Process *process){
 
     };
-    virtual void getNextProcess(){
-
+    virtual Process* getNextProcess(){
+        return nullptr;
     };
 };
 

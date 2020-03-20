@@ -16,8 +16,9 @@ class FCFS : public Scheduler{
 private:
     deque<Process*> runQueue;
 public:
-    void addProcess() override;
-    void getNextProcess() override;
+    void addProcess(Process *process) override;
+    Process* getNextProcess() override;
+    string getName() override;
 };
 
 

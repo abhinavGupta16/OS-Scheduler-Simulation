@@ -10,15 +10,17 @@
 
 using namespace std;
 
-Event::Event(int timeStamp, Process* process, int val){
+Event::Event(){};
+
+Event::Event(int timeStamp, Process *process, int val, process_state_t oldState, process_state_t newState, process_state_t transition){
     this->timeStamp = timeStamp;
     this->process = process;
     this->val = val;
-    this->oldState = STATE_CREATED;
-    this->newState = STATE_CREATED;
-    this->transition = TRANS_TO_READY;
+    this->oldState = oldState;
+    this->curState = newState;
+    this->transition = transition;
 }
 
 ostream& operator<<(ostream &strm, const Event &event) {
-    return strm << "Event(" << event.timeStamp << "," << *event.process << "," << event.val << "," << event.oldState << "," << event.newState << ")";
+    return strm << "Event(" << event.timeStamp << "," << *event.process << "," << event.val << "," << event.oldState << "," << event.curState << ")";
 }

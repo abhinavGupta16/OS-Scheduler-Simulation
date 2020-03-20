@@ -7,10 +7,19 @@
 
 using namespace std;
 
-void FCFS::addProcess(){
-
+string FCFS::getName() {
+    return "FCFS";
 }
 
-void FCFS::getNextProcess(){
+void FCFS::addProcess(Process *process){
+//    runQueue.insert(runQueue.begin(), process);
+    runQueue.push_back(process);
+}
 
+Process* FCFS::getNextProcess(){
+    if(runQueue.empty())
+        return nullptr;
+    Process *process = runQueue.front();
+    runQueue.pop_front();
+    return process;
 }
