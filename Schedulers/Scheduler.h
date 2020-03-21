@@ -20,11 +20,15 @@ public:
     virtual int getQuantum(){
         return -1;
     };
-//    virtual int getRemainingCpuBurst(){
-//        return -1;
-//    };
-//    virtual void setRemainingCpuBurst(int remainingCpuBurst){
-//    };
+    virtual int getMaxPriority(){
+        return 4;
+    };
+    virtual void printRunQueue(){
+
+    };
+    virtual bool isPriority(){
+        return false;
+    };
 };
 
 

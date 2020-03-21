@@ -3,6 +3,7 @@
 //
 
 #include "Event.h"
+#include "Helper.h"
 
 #include<iostream>
 #include<string>
@@ -22,5 +23,5 @@ Event::Event(int timeStamp, Process *process, int val, process_state_t oldState,
 }
 
 ostream& operator<<(ostream &strm, const Event &event) {
-    return strm << "Event(" << event.timeStamp << "," << *event.process << "," << event.val << "," << event.oldState << "," << event.curState << ")";
+    return strm << event.timeStamp << ":" << event.process->pid << ":" << enumStateToString(event.transition);
 }

@@ -32,10 +32,11 @@ public:
     int cpuBurst;
     int ioBurst;
     int pid;
-    int priority;
+    int staticPriority;
+    int dynamicPriority;
     int stateTs;
     int arrivalTime;
-    Process(int cpuTime, int cpuBurst, int ioBurst, int pid, int priority, int stateTs, int arrivalTime);
+    Process(int cpuTime, int cpuBurst, int ioBurst, int pid, int staticPriority, int stateTs, int arrivalTime);
     int finishTime;
     int turnarTime;
     int ioTime;

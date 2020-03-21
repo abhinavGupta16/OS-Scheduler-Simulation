@@ -38,7 +38,7 @@ void insertSorted(deque<Event*> *eventQueue, Event *event){
     }
 }
 
-void readInputFile(string filename, deque<Event*> *eventQueue, int &ofs, vector<int> &randvals){
+void readInputFile(string filename, deque<Event*> *eventQueue, int &ofs, vector<int> &randvals, Scheduler *scheduler){
     ifstream input(filename);
     string line;
     vector<string> tokens;
@@ -52,7 +52,7 @@ void readInputFile(string filename, deque<Event*> *eventQueue, int &ofs, vector<
         }
         if (prev < line.length())
             tokens.push_back(line.substr(prev, string::npos));
-        int priority = getCpuBurst(4, ofs, randvals)-1;
+        int priority = getCpuBurst(scheduler->getMaxPriority(), ofs, randvals);
         Process *process = new  Process(stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]), pid, priority, stoi(tokens[0]), stoi(tokens[0]));
         Event *event = createEvent(stoi(tokens[0]), process, STATE_CREATED, STATE_CREATED, TRANS_TO_READY);
 
@@ -89,9 +89,24 @@ void readRandomFile(string filename, vector<int> *randvals){
 
 void printDQueue(deque<Event*> *eventQueue){
     deque <Event*> :: iterator it;
-    for (it = eventQueue->begin(); it != eventQueue->end(); ++it)
-        cout << "\t" << **it << endl;
-    cout << '\n';
+    for (it = eventQueue->begin(); it != eventQueue->end(); ++it){
+        if(it+1 == eventQueue->end()){
+            cout << **it;
+        } else {
+            cout << **it << "  ";
+        }
+    }
+}
+
+void showEventQ(deque<Event*> *eventQueue){
+    deque <Event*> :: iterator it;
+    for (it = eventQueue->begin(); it != eventQueue->end(); ++it){
+        if(it+1 == eventQueue->end()){
+            cout << (**it).timeStamp << ":" << (**it).process->pid;
+        } else {
+            cout << (**it).timeStamp << ":" << (**it).process->pid << "  ";
+        }
+    }
 }
 
 void runProcess(Process* process, int cpuBurst){
@@ -108,8 +123,14 @@ string enumStateToString(process_state_t state) {
             return "RUNNG";
         case STATE_BLOCKED:
             return "BLOCK";
-        case STATE_DONE:
-            return "DONE";
+        case TRANS_TO_RUN:
+            return "RUNNG";
+        case TRANS_TO_BLOCK:
+            return "BLOCK";
+        case TRANS_TO_PREEMPT:
+            return "READY";
+        case TRANS_TO_READY:
+            return "READY";
         default:
             return "Invalid animal";
     }
@@ -133,7 +154,7 @@ void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler, int i
     for(int i = 0; i < finishedProcess.size(); i++){
         Process* process = finishedProcess[i];
         printf("%04d: %4d %4d %4d %4d %1d | %5d %5d %5d %5d\n", i, process->arrivalTime, process->reqCpuTime, process->cpuBurst,
-                process->ioBurst, process->priority+1, process->finishTime, process->turnarTime, process->ioTime, process->cpuWaiting);
+                process->ioBurst, process->staticPriority, process->finishTime, process->turnarTime, process->ioTime, process->cpuWaiting);
         totRunTime += process->runTime;
         totTurnarime += process->turnarTime;
         totCpuWaiting += process->cpuWaiting;

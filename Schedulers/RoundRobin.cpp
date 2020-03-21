@@ -9,7 +9,6 @@ using namespace std;
 
 RoundRobin::RoundRobin(int quantum){
     this->quantum = quantum;
-    this->remainingBurst = 0;
 }
 
 int RoundRobin::getQuantum(){

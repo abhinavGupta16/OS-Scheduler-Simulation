@@ -15,15 +15,12 @@ class RoundRobin : public Scheduler {
 private:
     deque<Process*> runQueue;
     int quantum;
-    int remainingBurst;
 public:
     RoundRobin(int quantum);
     void addProcess(Process *process) override;
     Process* getNextProcess() override;
     string getName() override;
     int getQuantum() override;
-//    int getRemainingCpuBurst() override;
-//    void setRemainingCpuBurst(int remainingCpuBurst) override;
 };
 
 

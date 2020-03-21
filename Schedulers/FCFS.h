@@ -19,6 +19,7 @@ public:
     void addProcess(Process *process) override;
     Process* getNextProcess() override;
     string getName() override;
+    void printRunQueue() override;
 };
 
 

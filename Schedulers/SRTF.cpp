@@ -36,3 +36,16 @@ Process* SRTF::getNextProcess(){
     runQueue.pop_front();
     return process;
 }
+
+void SRTF::printRunQueue() {
+    cout << "(" + to_string(runQueue.size()) + "):";
+    if(runQueue.size()!=0){
+        cout<< "  ";
+    }
+    for(int i = 0; i < runQueue.size(); i++){
+        cout<< *runQueue[i];
+        if(i+1!=runQueue.size()){
+            cout << " ";
+        }
+    }
+}

@@ -12,6 +12,7 @@
 #include "Schedulers/LCFS.h"
 #include "Schedulers/SRTF.h"
 #include "Schedulers/RoundRobin.h"
+#include "Schedulers/PriorityScheduler.h"
 #include <unistd.h>
 
 using namespace std;
@@ -22,12 +23,15 @@ vector<int> randvals;
 Scheduler *scheduler;
 vector<Process*> finishedProcess;
 bool verbose = false;
+bool printEvent = false;
+bool printRunQueue = false;
 int ioTime = 0;
 
 void Simulation();
 
 void parseArguments(int argc, char *argv[]){
     int c, quantum;
+    int maxPriority=4;
     bool schedulerInitialized = false;
     while ((c = getopt (argc, argv, "vtes:")) != -1)
         switch (c)
@@ -51,11 +55,21 @@ void parseArguments(int argc, char *argv[]){
                         quantum = atoi(optarg + 1);
                         scheduler = new RoundRobin(quantum);
                         break;
+                    case 'P':
+                        sscanf(optarg+1, "%d:%d",&quantum,&maxPriority);
+                        scheduler = new PriorityScheduler(quantum, maxPriority);
+                        break;
                     default:
                         fputs("Error: invalid scheduler "
                               "specified\n\n", stderr);
                         exit(EXIT_FAILURE);
                 }
+                break;
+            case 'e':
+                printEvent = true;
+                break;
+            case 't':
+                printRunQueue = true;
                 break;
             default:
                 abort ();
@@ -72,7 +86,7 @@ int main(int argc, char *argv[]){
 //    string inputFilename = "D:\\NYU_assignment\\Spring_2020\\OS\\Assignment2\\files\\lab2_assign\\input0";
 //    string randomFilename = "D:\\NYU_assignment\\Spring_2020\\OS\\Assignment2\\files\\lab2_assign\\rFile";
     readRandomFile(randomFilename, &randvals);
-    readInputFile(inputFilename, &eventQueue, ofs, randvals);
+    readInputFile(inputFilename, &eventQueue, ofs, randvals, scheduler);
     Simulation();
     printResults(finishedProcess, scheduler, ioTime);
 }
@@ -83,6 +97,11 @@ void Simulation() {
     int conncurrentIOTime = 0;
     int overlap = 0;
     int prevIOTime = 0;
+    if(printEvent){
+        cout<<"ShowEventQ:  ";
+        showEventQ(&eventQueue);
+        cout<<endl;
+    }
     while( (evt = getEvent(&eventQueue)) ) {
         Process *process = evt->process; // this is the process the event works on
         int currentTime = evt->timeStamp;
@@ -91,10 +110,8 @@ void Simulation() {
         int cpuBurst = 0;
         Event *newEvent;
         process_state_t oldState = evt->curState;
-        process_state_t curState;
-        process_state_t transition;
         bool callScheduler = false;
-        switch(evt->transition) { // which state to transition to?
+        switch(evt->transition) {
             case TRANS_TO_READY:
 // must come from BLOCKED or from PREEMPTION
 // must add to run queue
@@ -104,8 +121,6 @@ void Simulation() {
                 }
                 scheduler->addProcess(process);
                 process->stateTs = currentTime;
-                curState = STATE_READY;
-                transition = TRANS_TO_RUN;
                 callScheduler = true; // conditional on whether something is run
                 break;
             case TRANS_TO_RUN:
@@ -141,7 +156,7 @@ void Simulation() {
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
                          << enumStateToString(evt->curState) << " -> " << "RUNNG cb=" << randomBurst << " rem="
-                         << currentRunningProcess->cpuTime << " prio=" << currentRunningProcess->priority << endl;
+                         << currentRunningProcess->cpuTime << " prio=" << currentRunningProcess->dynamicPriority << endl;
                 }
 
                 currentRunningProcess->runTime += cpuBurst;
@@ -153,7 +168,19 @@ void Simulation() {
                 newEvent->process = currentRunningProcess;
                 newEvent->timeStamp = currentTime + cpuBurst;
                 newEvent->oldState = oldState;
+                if(printEvent) {
+                    cout << "  AddEvent(" << *newEvent << "):";
+                    if(!eventQueue.empty()){
+                        cout<<"  ";
+                    }
+                    printDQueue(&eventQueue);
+                }
                 insertSorted(&eventQueue, newEvent);
+                if(printEvent) {
+                    cout << " ==>   ";
+                    printDQueue(&eventQueue);
+                    cout<<endl;
+                }
 // create event for either preemption or blocking
                 break;
             case TRANS_TO_BLOCK:
@@ -167,6 +194,7 @@ void Simulation() {
                     currentRunningProcess = nullptr;
                     break;
                 }
+                currentRunningProcess->dynamicPriority = currentRunningProcess->staticPriority-1;
                 randomBurst = getCpuBurst(currentRunningProcess->ioBurst, ofs, randvals);
                 currentRunningProcess->ioTime += randomBurst;
 
@@ -181,19 +209,34 @@ void Simulation() {
                     conncurrentIOTime = randomBurst + currentTime;
                     prevIOTime = currentTime;
                 }
+
+
+                currentRunningProcess->stateTs = currentTime;
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
                          << enumStateToString(evt->curState) << " -> " << "BLOCK  ib=" << randomBurst << " rem="
                          << currentRunningProcess->cpuTime << endl;
                 }
-                currentRunningProcess->stateTs = currentTime;
+
                 newEvent = new Event();
                 newEvent->oldState = STATE_RUNNING;
                 newEvent->curState = STATE_BLOCKED;
                 newEvent->transition = TRANS_TO_READY;
                 newEvent->process = currentRunningProcess;
                 newEvent->timeStamp = currentTime + randomBurst;
+                if(printEvent) {
+                    cout << "  AddEvent(" << *newEvent << "):";
+                    if(!eventQueue.empty()){
+                        cout<<"  ";
+                    }
+                    printDQueue(&eventQueue);
+                }
                 insertSorted(&eventQueue, newEvent);
+                if(printEvent) {
+                    cout << " ==>   ";
+                    printDQueue(&eventQueue);
+                    cout<<endl;
+                }
                 callScheduler = true;
                 currentRunningProcess = nullptr;
                 break;
@@ -202,7 +245,10 @@ void Simulation() {
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
                          << enumStateToString(evt->curState) << " -> " << "READY  cb=" << currentRunningProcess->remainingBurst << " rem="
-                         << currentRunningProcess->cpuTime << " prio=" << currentRunningProcess->priority << endl;
+                         << currentRunningProcess->cpuTime << " prio=" << currentRunningProcess->dynamicPriority << endl;
+                }
+                if(scheduler->isPriority()){
+                    process->dynamicPriority--;
                 }
                 process->stateTs = currentTime;
                 scheduler->addProcess(process);
@@ -222,13 +268,17 @@ void Simulation() {
 
         }
 // remove current event object from Memory
-        delete evt;
-        evt = nullptr;
+
         if(callScheduler) {
             if (getNextEventTime(&eventQueue) == currentTime)
-                continue; //process next event from Event queue
-            callScheduler = false; // reset global flag
+                continue;
+            callScheduler = false;
             if (currentRunningProcess == nullptr) {
+                if(printRunQueue){
+                    cout<<"SCHED ";
+                    scheduler->printRunQueue();
+                    cout<<endl;
+                }
                 currentRunningProcess = scheduler->getNextProcess();
                 if (currentRunningProcess == nullptr)
                     continue;
@@ -238,10 +288,23 @@ void Simulation() {
                 newEventVal->transition = TRANS_TO_RUN;
                 newEventVal->process = currentRunningProcess;
                 newEventVal->timeStamp = currentTime;
+                if(printEvent) {
+                    cout << "  AddEvent(" << *newEventVal << "):";
+                    if(!eventQueue.empty()){
+                        cout<<"  ";
+                    }
+                    printDQueue(&eventQueue);
+                }
                 insertSorted(&eventQueue, newEventVal);
+                if(printEvent) {
+                    cout << " ==>   ";
+                    printDQueue(&eventQueue);
+                    cout<<endl;
+                }
 // create event to make this process runnable for same time.
             }
-
+            delete evt;
+            evt = nullptr;
         }
     }
     ioTime += conncurrentIOTime - prevIOTime - overlap;

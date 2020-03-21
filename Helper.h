@@ -15,7 +15,7 @@
 using namespace std;
 
 void insertSorted(deque<Event*> *eventQueue, Event *event);
-void readInputFile(string fileName, deque<Event*> *eventQueue, int &ofs, vector<int> &randvals);
+void readInputFile(string fileName, deque<Event*> *eventQueue, int &ofs, vector<int> &randvals, Scheduler *scheduler);
 Event* getEvent(deque<Event*> *eventQueue);
 void readRandomFile(string filename, vector<int> *randvals);
 int getNextEventTime(deque<Event*> *eventQueue);
@@ -25,5 +25,6 @@ Event* createEvent(int timestamp, Process* process, process_state_t oldState, pr
 string enumStateToString(process_state_t state);
 int getCpuBurst(int burst, int &ofs, vector<int> &randvals);
 void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler, int ioTime);
+void showEventQ(deque<Event*> *eventQueue);
 
 #endif //ASSIGNMENT2_HELPER_H
