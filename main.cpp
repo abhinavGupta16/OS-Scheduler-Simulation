@@ -315,4 +315,9 @@ void parseArguments(int argc, char *argv[]){
 
     if(!schedulerInitialized)
         scheduler = new FCFS();
+
+    if(!verbose){
+        printEvent = false;
+        printRunQueue = false;
+    }
 }
