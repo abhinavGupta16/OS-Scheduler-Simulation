@@ -15,11 +15,10 @@ using namespace std;
 
 class Event {
 public:
-    Event(int timeStamp, Process *process, int val, process_state_t oldState, process_state_t newState, process_state_t transition);
+    Event(int timeStamp, Process *process, process_state_t oldState, process_state_t newState, process_state_t transition);
     Event();
     int timeStamp;
     Process *process;
-    int val;
     process_state_t oldState;
     process_state_t curState;
     process_state_t transition;

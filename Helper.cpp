@@ -20,7 +20,7 @@ int getCpuBurst(int burst, int &ofs, vector<int> &randvals) {
 }
 
 Event* createEvent(int timestamp, Process* process, process_state_t oldState, process_state_t newState, process_state_t transition){
-    Event *event = new Event(timestamp, process, 0, oldState, newState, transition);
+    Event *event = new Event(timestamp, process, oldState, newState, transition);
     return event;
 }
 
@@ -98,6 +98,17 @@ void printDQueue(deque<Event*> *eventQueue){
     }
 }
 
+void printQForRemoveEvent(deque<Event*> *eventQueue){
+    deque <Event*> :: iterator it;
+    for (it = eventQueue->begin(); it != eventQueue->end(); ++it){
+        if(it+1 == eventQueue->end()){
+            cout << (*it)->timeStamp << ":" << (*it)->process->pid;
+        } else {
+            cout << (*it)->timeStamp << ":" << (*it)->process->pid << "  ";
+        }
+    }
+}
+
 void showEventQ(deque<Event*> *eventQueue){
     deque <Event*> :: iterator it;
     for (it = eventQueue->begin(); it != eventQueue->end(); ++it){
@@ -128,7 +139,7 @@ string enumStateToString(process_state_t state) {
         case TRANS_TO_BLOCK:
             return "BLOCK";
         case TRANS_TO_PREEMPT:
-            return "READY";
+            return "PREEMPT";
         case TRANS_TO_READY:
             return "READY";
         default:
@@ -165,4 +176,14 @@ void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler, int i
     double avgCpuWaiting = totCpuWaiting / finishedProcess.size();
     double throughPut = (finishedProcess.size() /(double) finishTime) * 100;
     printf("SUM: %d %.2lf %.2lf %.2lf %.2lf %.3lf\n", finishTime, cpuUtil, ioUtil, avgTurnAr, avgCpuWaiting, throughPut);
+}
+
+deque <Event*> :: iterator findEvent(deque<Event*> *eventQueue, Process *process){
+    deque <Event*> :: iterator it;
+    for (it = eventQueue->begin(); it != eventQueue->end(); ++it){
+        if(process == (**it).process){
+            return it;
+        }
+    }
+    return it;
 }

@@ -26,5 +26,8 @@ string enumStateToString(process_state_t state);
 int getCpuBurst(int burst, int &ofs, vector<int> &randvals);
 void printResults(vector<Process*> &finishedProcess, Scheduler *scheduler, int ioTime);
 void showEventQ(deque<Event*> *eventQueue);
+deque <Event*> :: iterator findEvent(deque<Event*> *eventQueue, Process *process);
+string enumStateToString(process_state_t state);
+void printQForRemoveEvent(deque<Event*> *eventQueue);
 
 #endif //ASSIGNMENT2_HELPER_H

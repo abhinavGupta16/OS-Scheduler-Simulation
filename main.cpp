@@ -13,6 +13,7 @@
 #include "Schedulers/SRTF.h"
 #include "Schedulers/RoundRobin.h"
 #include "Schedulers/PriorityScheduler.h"
+#include "Schedulers/PreemtivePrio.h"
 #include <unistd.h>
 
 using namespace std;
@@ -28,63 +29,13 @@ bool printRunQueue = false;
 int ioTime = 0;
 
 void Simulation();
-
-void parseArguments(int argc, char *argv[]){
-    int c, quantum;
-    int maxPriority=4;
-    bool schedulerInitialized = false;
-    while ((c = getopt (argc, argv, "vtes:")) != -1)
-        switch (c)
-        {
-            case 'v':
-                verbose = true;
-                break;
-            case 's':
-                schedulerInitialized = true;
-                switch(optarg[0]) {
-                    case 'F':
-                        scheduler = new FCFS();
-                        break;
-                    case 'L':
-                        scheduler = new LCFS();
-                        break;
-                    case 'S':
-                        scheduler = new SRTF();
-                        break;
-                    case 'R':
-                        quantum = atoi(optarg + 1);
-                        scheduler = new RoundRobin(quantum);
-                        break;
-                    case 'P':
-                        sscanf(optarg+1, "%d:%d",&quantum,&maxPriority);
-                        scheduler = new PriorityScheduler(quantum, maxPriority);
-                        break;
-                    default:
-                        fputs("Error: invalid scheduler "
-                              "specified\n\n", stderr);
-                        exit(EXIT_FAILURE);
-                }
-                break;
-            case 'e':
-                printEvent = true;
-                break;
-            case 't':
-                printRunQueue = true;
-                break;
-            default:
-                abort ();
-        }
-
-    if(!schedulerInitialized)
-        scheduler = new FCFS();
-}
+void preemptRunningProcess(Process *currentRunningProcess, Process *process, int currentTime);
+void parseArguments(int argc, char *argv[]);
 
 int main(int argc, char *argv[]){
     parseArguments(argc, argv);
     string inputFilename  = argv[optind];
     string randomFilename = argv[optind+1];
-//    string inputFilename = "D:\\NYU_assignment\\Spring_2020\\OS\\Assignment2\\files\\lab2_assign\\input0";
-//    string randomFilename = "D:\\NYU_assignment\\Spring_2020\\OS\\Assignment2\\files\\lab2_assign\\rFile";
     readRandomFile(randomFilename, &randvals);
     readInputFile(inputFilename, &eventQueue, ofs, randvals, scheduler);
     Simulation();
@@ -113,18 +64,19 @@ void Simulation() {
         bool callScheduler = false;
         switch(evt->transition) {
             case TRANS_TO_READY:
-// must come from BLOCKED or from PREEMPTION
-// must add to run queue
+                // must come from BLOCKED or from PREEMPTION
+                // must add to run queue
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
                          << enumStateToString(evt->curState) << " -> " << "READY" << endl;
                 }
                 scheduler->addProcess(process);
+                preemptRunningProcess(currentRunningProcess, process, currentTime);
                 process->stateTs = currentTime;
                 callScheduler = true; // conditional on whether something is run
                 break;
             case TRANS_TO_RUN:
-
+                // create event for either preemption or blocking
                 if(currentRunningProcess->remainingBurst > 0){
                     randomBurst = currentRunningProcess->remainingBurst;
                     currentRunningProcess->remainingBurst = 0;
@@ -162,6 +114,7 @@ void Simulation() {
                 currentRunningProcess->runTime += cpuBurst;
                 currentRunningProcess->cpuWaiting += timeInPrevState;
                 currentRunningProcess = process;
+
                 runProcess(currentRunningProcess, cpuBurst);
                 currentRunningProcess->stateTs = currentTime;
 
@@ -181,10 +134,9 @@ void Simulation() {
                     printDQueue(&eventQueue);
                     cout<<endl;
                 }
-// create event for either preemption or blocking
                 break;
             case TRANS_TO_BLOCK:
-//create an event for when process becomes READY again
+                //create an event for when process becomes READY again
                 if(currentRunningProcess->cpuTime == 0){
                     newEvent = new Event();
                     newEvent->timeStamp = evt->timeStamp;
@@ -241,7 +193,7 @@ void Simulation() {
                 currentRunningProcess = nullptr;
                 break;
             case TRANS_TO_PREEMPT:
-// add to runqueue (no event is generated)
+                // add to runqueue (no event is generated)
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
                          << enumStateToString(evt->curState) << " -> " << "READY  cb=" << currentRunningProcess->remainingBurst << " rem="
@@ -267,8 +219,6 @@ void Simulation() {
                 break;
 
         }
-// remove current event object from Memory
-
         if(callScheduler) {
             if (getNextEventTime(&eventQueue) == currentTime)
                 continue;
@@ -282,6 +232,7 @@ void Simulation() {
                 currentRunningProcess = scheduler->getNextProcess();
                 if (currentRunningProcess == nullptr)
                     continue;
+                // create event to make this process runnable for same time.
                 Event *newEventVal = new Event();
                 newEventVal->oldState = oldState;
                 newEventVal->curState = STATE_READY;
@@ -301,8 +252,8 @@ void Simulation() {
                     printDQueue(&eventQueue);
                     cout<<endl;
                 }
-// create event to make this process runnable for same time.
             }
+            // remove current event object from Memory
             delete evt;
             evt = nullptr;
         }
@@ -310,3 +261,109 @@ void Simulation() {
     ioTime += conncurrentIOTime - prevIOTime - overlap;
 }
 
+void preemptRunningProcess(Process *currentRunningProcess, Process *process, int currentTime){
+    if(scheduler->isPreemptivePriority() && currentRunningProcess!= nullptr && !eventQueue.empty()){
+        deque <Event*> :: iterator currentRunningEvent = findEvent(&eventQueue, currentRunningProcess);
+        Event *newEvent = *currentRunningEvent;
+        if(process != currentRunningProcess){
+            if(verbose) {
+                printf("---> PRIO preemption %d by %d ? %d TS=%d now=%d)", currentRunningProcess->pid,
+                       process->pid, process->dynamicPriority > currentRunningProcess->dynamicPriority,
+                       newEvent->timeStamp, currentTime);
+            }
+            if((process->dynamicPriority > currentRunningProcess->dynamicPriority) &&
+               ((*currentRunningEvent)->timeStamp > currentTime)){
+                if(verbose) cout << " --> YES" <<endl;
+                if(printEvent) {
+                    cout << "RemoveEvent(" << newEvent->process->pid << "):";
+                    if(!eventQueue.empty()){
+                        cout<<"  ";
+                    }
+                    printQForRemoveEvent(&eventQueue);
+                }
+                eventQueue.erase(currentRunningEvent);
+                if(printEvent) {
+                    cout << " ==>  ";
+                    printDQueue(&eventQueue);
+                    cout<<endl;
+                }
+                int diff = newEvent->timeStamp - currentTime;
+                currentRunningProcess->remainingBurst+= diff;
+                currentRunningProcess->cpuTime += diff;
+                currentRunningProcess->runTime -= diff;
+                newEvent->timeStamp = currentTime;
+                newEvent->transition = TRANS_TO_PREEMPT;
+                if(printEvent) {
+                    cout << "  AddEvent(" << *newEvent << "):";
+                    if(!eventQueue.empty()){
+                        cout<<"  ";
+                    }
+                    printDQueue(&eventQueue);
+                }
+                insertSorted(&eventQueue, newEvent);
+                if(printEvent) {
+                    cout << " ==>   ";
+                    printDQueue(&eventQueue);
+                    cout<<endl;
+                }
+            } else {
+                if(verbose) cout << " --> NO" <<endl;
+            }
+        }
+    }
+}
+
+
+void parseArguments(int argc, char *argv[]){
+    int c, quantum;
+    int maxPriority=4;
+    bool schedulerInitialized = false;
+    while ((c = getopt (argc, argv, "vtes:")) != -1)
+        switch (c)
+        {
+            case 'v':
+                verbose = true;
+                break;
+            case 's':
+                schedulerInitialized = true;
+                switch(optarg[0]) {
+                    case 'F':
+                        scheduler = new FCFS();
+                        break;
+                    case 'L':
+                        scheduler = new LCFS();
+                        break;
+                    case 'S':
+                        scheduler = new SRTF();
+                        break;
+                    case 'R':
+                        quantum = atoi(optarg + 1);
+                        scheduler = new RoundRobin(quantum);
+                        break;
+                    case 'P':
+                        sscanf(optarg+1, "%d:%d",&quantum,&maxPriority);
+                        scheduler = new PriorityScheduler(quantum, maxPriority);
+                        break;
+                    case 'E':
+                        sscanf(optarg+1, "%d:%d",&quantum,&maxPriority);
+                        scheduler = new PreemtivePrio(quantum, maxPriority);
+                        break;
+                    default:
+                        fputs("Error: invalid scheduler "
+                              "specified\n\n", stderr);
+                        exit(EXIT_FAILURE);
+                }
+                break;
+            case 'e':
+                printEvent = true;
+                break;
+            case 't':
+                printRunQueue = true;
+                break;
+            default:
+                abort ();
+        }
+
+    if(!schedulerInitialized)
+        scheduler = new FCFS();
+}

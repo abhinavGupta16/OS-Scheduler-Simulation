@@ -13,14 +13,15 @@ using namespace std;
 
 Event::Event(){};
 
-Event::Event(int timeStamp, Process *process, int val, process_state_t oldState, process_state_t newState, process_state_t transition){
+Event::Event(int timeStamp, Process *process, process_state_t oldState, process_state_t newState, process_state_t transition){
     this->timeStamp = timeStamp;
     this->process = process;
-    this->val = val;
     this->oldState = oldState;
     this->curState = newState;
     this->transition = transition;
 }
+
+
 
 ostream& operator<<(ostream &strm, const Event &event) {
     return strm << event.timeStamp << ":" << event.process->pid << ":" << enumStateToString(event.transition);

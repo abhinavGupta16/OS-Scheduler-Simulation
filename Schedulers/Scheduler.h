@@ -29,6 +29,9 @@ public:
     virtual bool isPriority(){
         return false;
     };
+    virtual bool isPreemptivePriority(){
+        return false;
+    };
 };
 
 
