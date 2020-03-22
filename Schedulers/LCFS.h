@@ -13,7 +13,7 @@ using namespace std;
 
 class LCFS : public Scheduler{
 private:
-    stack<Process*> runStack;
+    vector<Process*> runStack;
 public:
     void addProcess(Process *process) override;
     Process* getNextProcess() override;

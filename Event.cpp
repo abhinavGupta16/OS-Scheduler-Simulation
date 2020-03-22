@@ -21,8 +21,29 @@ Event::Event(int timeStamp, Process *process, process_state_t oldState, process_
     this->transition = transition;
 }
 
+string Event::enumStateToString(process_state_t state) {
+    switch(state) {
+        case STATE_CREATED:
+            return "CREATED";
+        case STATE_READY:
+            return "READY";
+        case STATE_RUNNING:
+            return "RUNNG";
+        case STATE_BLOCKED:
+            return "BLOCK";
+        case TRANS_TO_RUN:
+            return "RUNNG";
+        case TRANS_TO_BLOCK:
+            return "BLOCK";
+        case TRANS_TO_PREEMPT:
+            return "PREEMPT";
+        case TRANS_TO_READY:
+            return "READY";
+        default:
+            return "Invalid animal";
+    }
+}
 
-
-ostream& operator<<(ostream &strm, const Event &event) {
-    return strm << event.timeStamp << ":" << event.process->pid << ":" << enumStateToString(event.transition);
+ostream& operator<<(ostream &strm, Event &event) {
+    return strm << event.timeStamp << ":" << event.process->pid << ":" << event.enumStateToString(event.transition);
 }

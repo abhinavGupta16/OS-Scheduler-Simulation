@@ -22,6 +22,10 @@ Process::Process(int cpuTime, int cpuBurst, int ioBurst, int pid, int staticPrio
     this->remainingBurst = 0;
 }
 
+void Process::runProcess(int cpuBurst){
+    cpuTime -= cpuBurst;
+}
+
 ostream& operator<<(ostream &strm, const Process &process) {
     return strm << process.pid << ":" << process.stateTs;
 }

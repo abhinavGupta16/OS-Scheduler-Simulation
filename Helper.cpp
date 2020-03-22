@@ -24,17 +24,45 @@ Event* createEvent(int timestamp, Process* process, process_state_t oldState, pr
     return event;
 }
 
-void insertSorted(deque<Event*> *eventQueue, Event *event){
+void printDQueue(deque<Event*> *eventQueue){
+    deque <Event*> :: iterator it;
+    for (it = eventQueue->begin(); it != eventQueue->end(); ++it){
+        if(it+1 == eventQueue->end()){
+            cout << **it;
+        } else {
+            cout << **it << "  ";
+        }
+    }
+}
+
+void insertSorted(deque<Event*> *eventQueue, Event *event, bool printEvent){
+    if(printEvent) {
+        cout << "  AddEvent(" << *event << "):";
+        if(!eventQueue->empty()){
+            cout<<"  ";
+        }
+        printDQueue(eventQueue);
+    }
     if(eventQueue->empty()){
        eventQueue->push_back(event);
     } else {
         for(int i = 0; i < eventQueue->size(); i++){
             if(eventQueue->at(i)->timeStamp >  event->timeStamp){
                 eventQueue->insert(eventQueue->begin() + i, event);
+                if(printEvent) {
+                    cout << " ==>   ";
+                    printDQueue(eventQueue);
+                    cout<<endl;
+                }
                 return;
             }
         }
         eventQueue->push_back(event);
+    }
+    if(printEvent) {
+        cout << " ==>   ";
+        printDQueue(eventQueue);
+        cout<<endl;
     }
 }
 
@@ -56,7 +84,7 @@ void readInputFile(string filename, deque<Event*> *eventQueue, int &ofs, vector<
         Process *process = new  Process(stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]), pid, priority, stoi(tokens[0]), stoi(tokens[0]));
         Event *event = createEvent(stoi(tokens[0]), process, STATE_CREATED, STATE_CREATED, TRANS_TO_READY);
 
-        insertSorted(eventQueue, event);
+        insertSorted(eventQueue, event, false);
         tokens.clear();
         pid++;
     }
@@ -87,17 +115,6 @@ void readRandomFile(string filename, vector<int> *randvals){
     }
 }
 
-void printDQueue(deque<Event*> *eventQueue){
-    deque <Event*> :: iterator it;
-    for (it = eventQueue->begin(); it != eventQueue->end(); ++it){
-        if(it+1 == eventQueue->end()){
-            cout << **it;
-        } else {
-            cout << **it << "  ";
-        }
-    }
-}
-
 void printQForRemoveEvent(deque<Event*> *eventQueue){
     deque <Event*> :: iterator it;
     for (it = eventQueue->begin(); it != eventQueue->end(); ++it){
@@ -117,33 +134,6 @@ void showEventQ(deque<Event*> *eventQueue){
         } else {
             cout << (**it).timeStamp << ":" << (**it).process->pid << "  ";
         }
-    }
-}
-
-void runProcess(Process* process, int cpuBurst){
-    process->cpuTime -= cpuBurst;
-}
-
-string enumStateToString(process_state_t state) {
-    switch(state) {
-        case STATE_CREATED:
-            return "CREATED";
-        case STATE_READY:
-            return "READY";
-        case STATE_RUNNING:
-            return "RUNNG";
-        case STATE_BLOCKED:
-            return "BLOCK";
-        case TRANS_TO_RUN:
-            return "RUNNG";
-        case TRANS_TO_BLOCK:
-            return "BLOCK";
-        case TRANS_TO_PREEMPT:
-            return "PREEMPT";
-        case TRANS_TO_READY:
-            return "READY";
-        default:
-            return "Invalid animal";
     }
 }
 

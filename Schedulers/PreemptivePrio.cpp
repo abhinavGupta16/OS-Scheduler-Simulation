@@ -2,12 +2,12 @@
 // Created by gupta on 21-03-2020.
 //
 
-#include "PreemtivePrio.h"
+#include "PreemptivePrio.h"
 #include <bits/stdc++.h>
 
 using namespace std;
 
-PreemtivePrio::PreemtivePrio(int quantum, int maxPriority){
+PreemptivePrio::PreemptivePrio(int quantum, int maxPriority){
     this->quantum = quantum;
     this->maxPriority = maxPriority;
     for(int i = 0; i < maxPriority; i++){
@@ -20,15 +20,15 @@ PreemtivePrio::PreemtivePrio(int quantum, int maxPriority){
     this->expiredProcessCount = 0;
 }
 
-int PreemtivePrio::getQuantum(){
+int PreemptivePrio::getQuantum(){
     return this->quantum;
 }
 
-string PreemtivePrio::getName() {
+string PreemptivePrio::getName() {
     return "PREPRIO " + to_string(quantum) ;
 }
 
-void PreemtivePrio::addProcess(Process *process){
+void PreemptivePrio::addProcess(Process *process){
     if(process->dynamicPriority==-1){
         process->dynamicPriority = process->staticPriority-1;
         expiredQueuesPointer->at(process->dynamicPriority).push_back(process);
@@ -38,7 +38,7 @@ void PreemtivePrio::addProcess(Process *process){
     }
 }
 
-Process* PreemtivePrio::findProcess(){
+Process* PreemptivePrio::findProcess(){
     Process *process = nullptr;
     deque<Process*> curQueue;
     for(int i = activeQueuesPointer->size()-1; i >= 0; i--){
@@ -51,7 +51,7 @@ Process* PreemtivePrio::findProcess(){
     return process;
 }
 
-Process* PreemtivePrio::getNextProcess(){
+Process* PreemptivePrio::getNextProcess(){
     Process *process = findProcess();
     if(expiredProcessCount > 0 && process == nullptr){
         swapQueues();
@@ -60,21 +60,21 @@ Process* PreemtivePrio::getNextProcess(){
     return process;
 }
 
-void PreemtivePrio::swapQueues(){
+void PreemptivePrio::swapQueues(){
     vector<deque<Process*>> *temp = activeQueuesPointer;
     activeQueuesPointer = expiredQueuesPointer;
     expiredQueuesPointer = temp;
     expiredProcessCount = 0;
 }
 
-int PreemtivePrio::getMaxPriority(){
+int PreemptivePrio::getMaxPriority(){
     return maxPriority;
 }
 
-bool PreemtivePrio::isPriority() {
+bool PreemptivePrio::isPriority() {
     return true;
 }
 
-bool PreemtivePrio::isPreemptivePriority(){
+bool PreemptivePrio::isPreemptivePriority(){
     return true;
 }

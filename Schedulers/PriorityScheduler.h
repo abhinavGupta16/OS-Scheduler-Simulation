@@ -15,7 +15,6 @@ class PriorityScheduler : public Scheduler{
 private:
     vector<deque<Process*>> activeQueues, expiredQueues;
     vector<deque<Process*>> *activeQueuesPointer, *expiredQueuesPointer;
-//    deque<Process*> activeQueue, expiredQueue;
     int quantum;
     int maxPriority;
     int expiredProcessCount;

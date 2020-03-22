@@ -2,8 +2,8 @@
 // Created by gupta on 21-03-2020.
 //
 
-#ifndef ASSIGNMENT2_PREEMTIVEPRIO_H
-#define ASSIGNMENT2_PREEMTIVEPRIO_H
+#ifndef ASSIGNMENT2_PREEMPTIVEPRIO_H
+#define ASSIGNMENT2_PREEMPTIVEPRIO_H
 
 #include <bits/stdc++.h>
 #include "../Process.h"
@@ -11,7 +11,7 @@
 
 using namespace std;
 
-class PreemtivePrio : public Scheduler {
+class PreemptivePrio : public Scheduler {
 private:
     vector<deque<Process*>> activeQueues, expiredQueues;
     vector<deque<Process*>> *activeQueuesPointer, *expiredQueuesPointer;
@@ -21,7 +21,7 @@ private:
     void swapQueues();
     Process* findProcess();
 public:
-    PreemtivePrio(int quantum, int maxPriority);
+    PreemptivePrio(int quantum, int maxPriority);
     void addProcess(Process *process) override;
     Process* getNextProcess() override;
     string getName() override;
@@ -31,4 +31,4 @@ public:
     bool isPreemptivePriority() override;
 };
 
-#endif //ASSIGNMENT2_PREEMTIVEPRIO_H
+#endif //ASSIGNMENT2_PREEMPTIVEPRIO_H

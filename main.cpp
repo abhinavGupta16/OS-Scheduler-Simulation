@@ -13,7 +13,7 @@
 #include "Schedulers/SRTF.h"
 #include "Schedulers/RoundRobin.h"
 #include "Schedulers/PriorityScheduler.h"
-#include "Schedulers/PreemtivePrio.h"
+#include "Schedulers/PreemptivePrio.h"
 #include <unistd.h>
 
 using namespace std;
@@ -68,7 +68,7 @@ void Simulation() {
                 // must add to run queue
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
-                         << enumStateToString(evt->curState) << " -> " << "READY" << endl;
+                         << evt->enumStateToString(evt->curState) << " -> " << "READY" << endl;
                 }
                 scheduler->addProcess(process);
                 preemptRunningProcess(currentRunningProcess, process, currentTime);
@@ -107,7 +107,7 @@ void Simulation() {
 
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
-                         << enumStateToString(evt->curState) << " -> " << "RUNNG cb=" << randomBurst << " rem="
+                         << evt->enumStateToString(evt->curState) << " -> " << "RUNNG cb=" << randomBurst << " rem="
                          << currentRunningProcess->cpuTime << " prio=" << currentRunningProcess->dynamicPriority << endl;
                 }
 
@@ -115,25 +115,13 @@ void Simulation() {
                 currentRunningProcess->cpuWaiting += timeInPrevState;
                 currentRunningProcess = process;
 
-                runProcess(currentRunningProcess, cpuBurst);
+                currentRunningProcess->runProcess(cpuBurst);
                 currentRunningProcess->stateTs = currentTime;
 
                 newEvent->process = currentRunningProcess;
                 newEvent->timeStamp = currentTime + cpuBurst;
                 newEvent->oldState = oldState;
-                if(printEvent) {
-                    cout << "  AddEvent(" << *newEvent << "):";
-                    if(!eventQueue.empty()){
-                        cout<<"  ";
-                    }
-                    printDQueue(&eventQueue);
-                }
-                insertSorted(&eventQueue, newEvent);
-                if(printEvent) {
-                    cout << " ==>   ";
-                    printDQueue(&eventQueue);
-                    cout<<endl;
-                }
+                insertSorted(&eventQueue, newEvent, printEvent);
                 break;
             case TRANS_TO_BLOCK:
                 //create an event for when process becomes READY again
@@ -166,7 +154,7 @@ void Simulation() {
                 currentRunningProcess->stateTs = currentTime;
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
-                         << enumStateToString(evt->curState) << " -> " << "BLOCK  ib=" << randomBurst << " rem="
+                         << evt->enumStateToString(evt->curState) << " -> " << "BLOCK  ib=" << randomBurst << " rem="
                          << currentRunningProcess->cpuTime << endl;
                 }
 
@@ -176,19 +164,7 @@ void Simulation() {
                 newEvent->transition = TRANS_TO_READY;
                 newEvent->process = currentRunningProcess;
                 newEvent->timeStamp = currentTime + randomBurst;
-                if(printEvent) {
-                    cout << "  AddEvent(" << *newEvent << "):";
-                    if(!eventQueue.empty()){
-                        cout<<"  ";
-                    }
-                    printDQueue(&eventQueue);
-                }
-                insertSorted(&eventQueue, newEvent);
-                if(printEvent) {
-                    cout << " ==>   ";
-                    printDQueue(&eventQueue);
-                    cout<<endl;
-                }
+                insertSorted(&eventQueue, newEvent, printEvent);
                 callScheduler = true;
                 currentRunningProcess = nullptr;
                 break;
@@ -196,7 +172,7 @@ void Simulation() {
                 // add to runqueue (no event is generated)
                 if(verbose) {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
-                         << enumStateToString(evt->curState) << " -> " << "READY  cb=" << currentRunningProcess->remainingBurst << " rem="
+                         << evt->enumStateToString(evt->curState) << " -> " << "READY  cb=" << currentRunningProcess->remainingBurst << " rem="
                          << currentRunningProcess->cpuTime << " prio=" << currentRunningProcess->dynamicPriority << endl;
                 }
                 if(scheduler->isPriority()){
@@ -239,19 +215,7 @@ void Simulation() {
                 newEventVal->transition = TRANS_TO_RUN;
                 newEventVal->process = currentRunningProcess;
                 newEventVal->timeStamp = currentTime;
-                if(printEvent) {
-                    cout << "  AddEvent(" << *newEventVal << "):";
-                    if(!eventQueue.empty()){
-                        cout<<"  ";
-                    }
-                    printDQueue(&eventQueue);
-                }
-                insertSorted(&eventQueue, newEventVal);
-                if(printEvent) {
-                    cout << " ==>   ";
-                    printDQueue(&eventQueue);
-                    cout<<endl;
-                }
+                insertSorted(&eventQueue, newEventVal, printEvent);
             }
             // remove current event object from Memory
             delete evt;
@@ -293,26 +257,13 @@ void preemptRunningProcess(Process *currentRunningProcess, Process *process, int
                 currentRunningProcess->runTime -= diff;
                 newEvent->timeStamp = currentTime;
                 newEvent->transition = TRANS_TO_PREEMPT;
-                if(printEvent) {
-                    cout << "  AddEvent(" << *newEvent << "):";
-                    if(!eventQueue.empty()){
-                        cout<<"  ";
-                    }
-                    printDQueue(&eventQueue);
-                }
-                insertSorted(&eventQueue, newEvent);
-                if(printEvent) {
-                    cout << " ==>   ";
-                    printDQueue(&eventQueue);
-                    cout<<endl;
-                }
+                insertSorted(&eventQueue, newEvent, printEvent);
             } else {
                 if(verbose) cout << " --> NO" <<endl;
             }
         }
     }
 }
-
 
 void parseArguments(int argc, char *argv[]){
     int c, quantum;
@@ -346,7 +297,7 @@ void parseArguments(int argc, char *argv[]){
                         break;
                     case 'E':
                         sscanf(optarg+1, "%d:%d",&quantum,&maxPriority);
-                        scheduler = new PreemtivePrio(quantum, maxPriority);
+                        scheduler = new PreemptivePrio(quantum, maxPriority);
                         break;
                     default:
                         fputs("Error: invalid scheduler "

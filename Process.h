@@ -12,19 +12,6 @@
 
 using namespace std;
 
-enum process_state_t {
-    STATE_CREATED,
-    STATE_READY,
-    STATE_RUNNING,
-    STATE_BLOCKED,
-    STATE_DONE,
-    TRANS_TO_READY,
-    TRANS_TO_RUN,
-    TRANS_TO_BLOCK,
-    TRANS_TO_PREEMPT,
-    TRANS_TO_DONE
-};
-
 class Process {
 public:
     int cpuTime;
@@ -37,6 +24,7 @@ public:
     int stateTs;
     int arrivalTime;
     Process(int cpuTime, int cpuBurst, int ioBurst, int pid, int staticPriority, int stateTs, int arrivalTime);
+    void runProcess(int cpuBurst);
     int finishTime;
     int turnarTime;
     int ioTime;

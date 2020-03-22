@@ -13,10 +13,23 @@
 
 using namespace std;
 
+enum process_state_t {
+    STATE_CREATED,
+    STATE_READY,
+    STATE_RUNNING,
+    STATE_BLOCKED,
+    TRANS_TO_READY,
+    TRANS_TO_RUN,
+    TRANS_TO_BLOCK,
+    TRANS_TO_PREEMPT,
+    TRANS_TO_DONE
+};
+
 class Event {
 public:
     Event(int timeStamp, Process *process, process_state_t oldState, process_state_t newState, process_state_t transition);
     Event();
+    string enumStateToString(process_state_t state);
     int timeStamp;
     Process *process;
     process_state_t oldState;
@@ -24,6 +37,6 @@ public:
     process_state_t transition;
 };
 
-ostream& operator<<(ostream &strm, const Event &event);
+ostream& operator<<(ostream &strm, Event &event);
 
 #endif //ASSIGNMENT2_EVENT_H
