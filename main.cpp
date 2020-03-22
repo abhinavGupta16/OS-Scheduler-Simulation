@@ -5,6 +5,7 @@
 #include<iostream>
 #include<string>
 #include <bits/stdc++.h>
+#include <unistd.h>
 
 #include "Helper.h"
 #include "Schedulers/Scheduler.h"
@@ -14,7 +15,6 @@
 #include "Schedulers/RoundRobin.h"
 #include "Schedulers/PriorityScheduler.h"
 #include "Schedulers/PreemptivePrio.h"
-#include <unistd.h>
 
 using namespace std;
 
@@ -201,9 +201,7 @@ void Simulation() {
             callScheduler = false;
             if (currentRunningProcess == nullptr) {
                 if(printRunQueue){
-                    cout<<"SCHED ";
                     scheduler->printRunQueue();
-                    cout<<endl;
                 }
                 currentRunningProcess = scheduler->getNextProcess();
                 if (currentRunningProcess == nullptr)

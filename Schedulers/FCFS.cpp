@@ -24,6 +24,7 @@ Process* FCFS::getNextProcess(){
 }
 
 void FCFS::printRunQueue() {
+    cout<<"SCHED ";
     cout << "(" + to_string(runQueue.size()) + "):";
     if(runQueue.size()!=0){
         cout<< "  ";
@@ -34,4 +35,5 @@ void FCFS::printRunQueue() {
             cout << " ";
         }
     }
+    cout<<endl;
 }

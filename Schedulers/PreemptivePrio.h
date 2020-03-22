@@ -20,6 +20,7 @@ private:
     int expiredProcessCount;
     void swapQueues();
     Process* findProcess();
+    void printQueueVector(vector<deque<Process*>> *queuesPointer);
 public:
     PreemptivePrio(int quantum, int maxPriority);
     void addProcess(Process *process) override;
@@ -29,6 +30,7 @@ public:
     int getMaxPriority() override;
     bool isPriority() override;
     bool isPreemptivePriority() override;
+    void printRunQueue() override;
 };
 
 #endif //ASSIGNMENT2_PREEMPTIVEPRIO_H

@@ -38,6 +38,7 @@ Process* SRTF::getNextProcess(){
 }
 
 void SRTF::printRunQueue() {
+    cout<<"SCHED ";
     cout << "(" + to_string(runQueue.size()) + "):";
     if(runQueue.size()!=0){
         cout<< "  ";
@@ -48,4 +49,5 @@ void SRTF::printRunQueue() {
             cout << " ";
         }
     }
+    cout<<endl;
 }

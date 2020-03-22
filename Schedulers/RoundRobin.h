@@ -21,6 +21,7 @@ public:
     Process* getNextProcess() override;
     string getName() override;
     int getQuantum() override;
+    void printRunQueue() override;
 };
 
 

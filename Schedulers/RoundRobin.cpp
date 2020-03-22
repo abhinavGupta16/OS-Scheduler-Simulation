@@ -15,14 +15,6 @@ int RoundRobin::getQuantum(){
     return this->quantum;
 }
 
-//int RoundRobin::getRemainingCpuBurst(){
-//    return remainingBurst;
-//}
-//
-//void RoundRobin::setRemainingCpuBurst(int remainingCpuBurst){
-//    this->remainingBurst = remainingCpuBurst;
-//}
-
 string RoundRobin::getName() {
     return "RR " + to_string(quantum) ;
 }
@@ -37,4 +29,19 @@ Process* RoundRobin::getNextProcess(){
     Process *process = runQueue.front();
     runQueue.pop_front();
     return process;
+}
+
+void RoundRobin::printRunQueue() {
+    cout<<"SCHED ";
+    cout << "(" + to_string(runQueue.size()) + "):";
+    if(runQueue.size()!=0){
+        cout<< "  ";
+    }
+    for(int i = 0; i < runQueue.size(); i++){
+        cout<< *runQueue[i];
+        if(i+1!=runQueue.size()){
+            cout << " ";
+        }
+    }
+    cout<<endl;
 }

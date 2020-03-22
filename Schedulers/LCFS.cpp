@@ -24,6 +24,7 @@ Process* LCFS::getNextProcess(){
 }
 
 void LCFS::printRunQueue() {
+    cout<<"SCHED ";
     cout << "(" + to_string(runStack.size()) + "):";
     if(runStack.size()!=0){
         cout<< "  ";
@@ -34,4 +35,5 @@ void LCFS::printRunQueue() {
             cout << " ";
         }
     }
+    cout<<endl;
 }

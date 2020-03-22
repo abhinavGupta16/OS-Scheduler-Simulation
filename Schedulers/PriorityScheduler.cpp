@@ -74,3 +74,27 @@ int PriorityScheduler::getMaxPriority(){
 bool PriorityScheduler::isPriority() {
     return true;
 }
+
+void PriorityScheduler::printQueueVector(vector<deque<Process*>> *queuesPointer){
+    cout<<"{ ";
+    for(int i = queuesPointer->size()-1; i >= 0 ; i--){
+        deque<Process*> runQueue = queuesPointer->at(i);
+        cout<<"[";
+        for(int i = 0; i < runQueue.size(); i++){
+            if(i+1==runQueue.size()){
+                cout << runQueue[i]->pid;
+            } else {
+                cout << runQueue[i]->pid << ",";
+            }
+        }
+        cout<<"]";
+    }
+    cout<<"} :";
+}
+
+void PriorityScheduler::printRunQueue() {
+    printQueueVector(activeQueuesPointer);
+    cout<<" ";
+    printQueueVector(expiredQueuesPointer);
+    cout<<endl;
+}
