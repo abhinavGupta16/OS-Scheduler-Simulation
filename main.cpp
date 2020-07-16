@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
     parseArguments(argc, argv);
     string inputFilename  = argv[optind];
     string randomFilename = argv[optind+1];
-    readRandomFile(randomFilename, &randvals);
+    readRandomFile(randomFilename, &randvals );
     readInputFile(inputFilename, &eventQueue, ofs, randvals, scheduler);
     Simulation();
     printResults(finishedProcess, scheduler, ioTime);
