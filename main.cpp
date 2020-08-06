@@ -109,7 +109,7 @@ void Simulation() {
                     cout << currentTime << " " << process->pid << " " << timeInPrevState << ": "
                          << evt->enumStateToString(evt->curState) << " -> " << "RUNNG cb=" << randomBurst << " rem="
                          << currentRunningProcess->cpuTime << " prio=" << currentRunningProcess->dynamicPriority << endl;
-                }
+                }    
 
                 currentRunningProcess->runTime += cpuBurst;
                 currentRunningProcess->cpuWaiting += timeInPrevState;
